@@ -110,19 +110,19 @@ if __name__ == '__main__':
         reader = csv.reader(inp)
         labels_to_names = {int(rows[1]): rows[0] for rows in reader}
 
-    stations = os.listdir(path_to_data)
-    for station in stations:
-        print("Station:", station)
-        folder = "Left"
-        path_to_data = os.path.join(path_to_data, station, folder)
-        # load retinanet model
-        model = models.load_model(snapshot_path, backbone_name='resnet50')
-        # if the model is not converted to an inference model, use the line below
-        # see: https://github.com/fizyr/keras-retinanet#converting-a-training-model-to-inference-model
-        # model = models.convert_model(model)
-        for temp in os.listdir(path_to_xml):
-            xml_file = os.path.join(path_to_xml, temp, "deepvision.xml")
-            DV_predict(model, path_to_data, xml_file)
+    #stations = os.listdir(path_to_data)
+    #for station in stations:
+    #    print("Station:", station)
+    folder = "Left"
+    path_to_data = os.path.join(path_to_data, folder)
+    # load retinanet model
+    model = models.load_model(snapshot_path, backbone_name='resnet50')
+    # if the model is not converted to an inference model, use the line below
+    # see: https://github.com/fizyr/keras-retinanet#converting-a-training-model-to-inference-model
+    # model = models.convert_model(model)
+    for temp in os.listdir(path_to_xml):
+        xml_file = os.path.join(path_to_xml, temp, "deepvision.xml")
+        DV_predict(model, path_to_data, xml_file)
 
 
 
