@@ -120,9 +120,14 @@ if __name__ == '__main__':
     # if the model is not converted to an inference model, use the line below
     # see: https://github.com/fizyr/keras-retinanet#converting-a-training-model-to-inference-model
     # model = models.convert_model(model)
-    for temp in os.listdir(path_to_xml):
-        xml_file = os.path.join(path_to_xml, temp, "deepvision.xml")
-        DV_predict(model, path_to_data, xml_file)
+
+    # for temp in os.listdir(path_to_xml):
+    #     xml_file = os.path.join(path_to_xml, temp, "deepvision.xml")
+    #     DV_predict(model, path_to_data, xml_file)
+
+    xml_file = os.path.join(path_to_xml,"deepvision.xml")
+    DV_predict(model, path_to_data, xml_file)
+
 
 
 
