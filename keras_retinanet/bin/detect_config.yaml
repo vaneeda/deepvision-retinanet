@@ -1,8 +1,8 @@
 # Config file
 
 snapshot_path: '/snapshots/resnet50_csv_inference_10.h5'
-path_to_data: '/data/'
-path_to_xml: '/temp/'
+path_to_data: '/data/20191205T0014Z/'
+path_to_xml: '/temp/20191205T0014Z_temporal_folder_2/'
 classes: 'fish_4classes.csv'
 
 
