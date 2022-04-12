@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import zipfile
-import time
 import xml.etree.ElementTree as ET
 import csv
 
@@ -91,8 +90,7 @@ def DV_predict(model, path_to_data, xml_file):
                 anno.append(anno_row)
         if anno_row[7] < 0.05:
             anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
-    anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0',
-                                          'x1', 'y1', 'label', 'score'])
+    anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
     output_csv = xml_file.split(".")[0] + ".csv"
     anno_df.to_csv(output_csv, index=False)
     return anno_df
@@ -100,34 +98,11 @@ def DV_predict(model, path_to_data, xml_file):
 
 if __name__ == '__main__':
     PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config.yaml'))
-    path_to_data = PARAMS['path_to_data']
-    snapshot_path = PARAMS["snapshot_path"]
-    path_to_xml = PARAMS["path_to_xml"]
-    classes = PARAMS["classes"]
     labels_to_names = {}
-
-    with open(classes, mode='r') as inp:
+    with open(PARAMS["classes"], mode='r') as inp:
         reader = csv.reader(inp)
         labels_to_names = {int(rows[1]): rows[0] for rows in reader}
 
-    #stations = os.listdir(path_to_data)
-    #for station in stations:
-    #    print("Station:", station)
-    folder = "Left"
-    path_to_data = os.path.join(path_to_data, folder)
-    # load retinanet model
-    model = models.load_model(snapshot_path, backbone_name='resnet50')
-    # if the model is not converted to an inference model, use the line below
-    # see: https://github.com/fizyr/keras-retinanet#converting-a-training-model-to-inference-model
-    # model = models.convert_model(model)
-
-    # for temp in os.listdir(path_to_xml):
-    #     xml_file = os.path.join(path_to_xml, temp, "deepvision.xml")
-    #     DV_predict(model, path_to_data, xml_file)
-
-    xml_file = os.path.join(path_to_xml,"deepvision.xml")
-    DV_predict(model, path_to_data, xml_file)
-
-
-
+    model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
+    DV_predict(model, os.path.join(PARAMS['path_to_data'], PARAMS['folder']), PARAMS["xml_file"])
 
