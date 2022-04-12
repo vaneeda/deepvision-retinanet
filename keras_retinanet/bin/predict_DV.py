@@ -97,12 +97,11 @@ def DV_predict(model, path_to_data, xml_file):
 
 
 if __name__ == '__main__':
-    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config.yaml'))
+    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
     labels_to_names = {}
-    with open(PARAMS["classes"], mode='r') as inp:
+    with open("fish_4classes.csv", mode='r') as inp:
         reader = csv.reader(inp)
         labels_to_names = {int(rows[1]): rows[0] for rows in reader}
 
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
     DV_predict(model, os.path.join(PARAMS['path_to_data'], PARAMS['folder']), PARAMS["xml_file"])
-
