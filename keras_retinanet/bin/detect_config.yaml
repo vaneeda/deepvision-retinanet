@@ -1,7 +1,7 @@
 # Config file
 
 path_to_data: '/data/'
-folder: 'Left'
+orientation: 'Left'
 xml_file: '/temp/deepvision.xml'
 snapshot_path: '/snapshots/resnet50_csv_inference_10.h5'
 classes: 'fish_4classes.csv'
