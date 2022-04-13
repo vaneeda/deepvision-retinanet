@@ -5,6 +5,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_retinanet.bin"
 from keras_retinanet import models
 from keras_retinanet.utils.image import read_image_bgr, preprocess_image, resize_image
+from keras_retinanet.utils.csv2xml import csv2xml
 from keras_retinanet.paths import load_config
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ import tensorflow as tf
 import zipfile
 import xml.etree.ElementTree as ET
 import csv
+
 
 # use this environment flag to change which GPU to use
 #os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -70,7 +72,8 @@ def predict_image(model, filename):
     return boxes, scores, labels
 
 
-def DV_predict(model, path_to_data, xml_file):
+def DV_predict(model, path_to_data, orientation, xml_file):
+    path_to_data = os.path.join(path_to_data, orientation)
     dict, list_of_files = read_zip_files(path_to_data)
     df = select_data_from_xml_file(list_of_files, xml_file)
     anno = []
@@ -91,17 +94,19 @@ def DV_predict(model, path_to_data, xml_file):
         if anno_row[7] < 0.05:
             anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
     anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
-    output_csv = xml_file.split(".")[0] + ".csv"
+    output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
     anno_df.to_csv(output_csv, index=False)
+    csv2xml(xml_file, output_csv, orientation)
     return anno_df
 
 
 if __name__ == '__main__':
-    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config.yaml'))
+    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
     labels_to_names = {}
     with open(PARAMS["classes"], mode='r') as inp:
         reader = csv.reader(inp)
         labels_to_names = {int(rows[1]): rows[0] for rows in reader}
 
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
-    DV_predict(model, os.path.join(PARAMS['path_to_data'], PARAMS['folder']), PARAMS["xml_file"])
+    DV_predict(model, PARAMS['path_to_data'], PARAMS['orientation'], PARAMS["xml_file"])
+
