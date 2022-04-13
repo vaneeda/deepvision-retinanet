@@ -101,7 +101,7 @@ def DV_predict(model, path_to_data, orientation, xml_file):
 
 
 if __name__ == '__main__':
-    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
+    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config.yaml'))
     labels_to_names = {}
     with open(PARAMS["classes"], mode='r') as inp:
         reader = csv.reader(inp)
