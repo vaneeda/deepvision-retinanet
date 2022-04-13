@@ -29,15 +29,14 @@ def get_session():
 def dv_xml_to_csv(xml_file):
     tree = ET.parse(xml_file)
     root = tree.getroot()
-    header = ('datetime', 'depth', 'active')
+    header = ('datetime', 'depth')
     table = []
 
     for element in root.iter("frames"):
         for frame in element:
-            active = frame.get("active")
             depth = frame.get("depth")
             time = frame.get('time')
-            row = time, float(depth), active
+            row = time, float(depth)
             table.append(row)
     out_df = pd.DataFrame(table, columns=header)
     return out_df
@@ -101,18 +100,12 @@ def DV_predict(model, path_to_data, orientation, xml_file):
 
 if __name__ == '__main__':
     PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
-    labels_to_names = {}
-    with open(PARAMS["classes"], mode='r') as inp:
-        reader = csv.reader(inp)
-        labels_to_names = {int(rows[1]): rows[0] for rows in reader}
-
+    labels_to_names = PARAMS["classes"]
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
-
     csv_file_paths = []
     for orientation in PARAMS['orientation']:
         _, csvpath = DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
         csv_file_paths.append(csvpath)
-
 
     csv2xml(PARAMS["xml_file"], csv_file_paths, PARAMS['orientation'])
 
