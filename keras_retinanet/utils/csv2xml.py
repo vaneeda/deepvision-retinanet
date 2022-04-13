@@ -4,7 +4,7 @@ from lxml import etree as ET
 import csv
 
 
-def csv2xml(input_xml_path, csv_input_path, orientation):
+def csv2xml(input_xml_path, csv_input_paths, orientations):
 
     def inBounds(point, tl, br):
         x, y = point
@@ -88,7 +88,11 @@ def csv2xml(input_xml_path, csv_input_path, orientation):
                 "groundtruth": Object_data.groundtruth
             })
             # Create and add bounding box element to object
-            ET.SubElement(obj, Object_data.bbox_side,
+            if object_data['orientation'] == "Left":
+                bbox_side = "lbb"
+            else:
+                bbox_side = "rbb"
+            ET.SubElement(obj, bbox_side,
                 attrib={"x0": object_data['x0'], "y0": object_data['y0'], "x1": object_data['x1'], "y1": object_data['y1']})
 
         return framework_element
@@ -112,10 +116,6 @@ def csv2xml(input_xml_path, csv_input_path, orientation):
         annotator = Framework_data.annotator        # Same value as framework
         groundtruth = Framework_data.groundtruth    # Same value as framework
 
-        if orientation == "Left":
-            bbox_side = "lbb"
-        else:
-            bbox_side = "rbb"
     ######################################
     ### Main script
     ######################################
@@ -126,23 +126,25 @@ def csv2xml(input_xml_path, csv_input_path, orientation):
 
     # Get csv file and import data to dict
     csvframedict = {}
-    with open(csv_input_path, newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if row['datetime'] in csvframedict:
-                csvframedict[row['datetime']].append({"x0": str(round(float(row['x0']))),
-                                                      "y0": str(round(float(row['y0']))),
-                                                      "x1": str(round(float(row['x1']))),
-                                                      "y1": str(round(float(row['y1']))),
-                                                      "species": row['label'],
-                                                      "confidence": row['score']})
-            else:
-                csvframedict[row['datetime']] = [{"x0": str(round(float(row['x0']))),
-                                                  "y0": str(round(float(row['y0']))),
-                                                  "x1": str(round(float(row['x1']))),
-                                                  "y1": str(round(float(row['y1']))),
-                                                  "species": row['label'],
-                                                  "confidence": row['score']}]
+    print(csv_input_paths)
+    for csv_pos, csvfile in enumerate(csv_input_paths):
+        with open(csvfile, newline="") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['datetime'] in csvframedict:
+                    csvframedict[row['datetime']].append({"x0": str(round(float(row['x0']))),
+                                                        "y0": str(round(float(row['y0']))),
+                                                        "x1": str(round(float(row['x1']))),
+                                                        "y1": str(round(float(row['y1']))),
+                                                        "species": row['label'],
+                                                        "confidence": row['score'], "orientation": orientations[csv_pos]})
+                else:
+                    csvframedict[row['datetime']] = [{"x0": str(round(float(row['x0']))),
+                                                    "y0": str(round(float(row['y0']))),
+                                                    "x1": str(round(float(row['x1']))),
+                                                    "y1": str(round(float(row['y1']))),
+                                                    "species": row['label'],
+                                                    "confidence": row['score'], "orientation": orientations[csv_pos]}]
 
     # For each child in csv, update framework
     for child in root[1]:

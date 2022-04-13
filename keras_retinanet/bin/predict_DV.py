@@ -96,8 +96,7 @@ def DV_predict(model, path_to_data, orientation, xml_file):
     anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
     output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
     anno_df.to_csv(output_csv, index=False)
-    csv2xml(xml_file, output_csv, orientation)
-    return anno_df
+    return anno_df, output_csv
 
 
 if __name__ == '__main__':
@@ -109,7 +108,12 @@ if __name__ == '__main__':
 
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
 
+    csv_file_paths = []
     for orientation in PARAMS['orientation']:
-        DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
+        _, csvpath = DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
+        csv_file_paths.append(csvpath)
+
+
+    csv2xml(PARAMS["xml_file"], csv_file_paths, PARAMS['orientation'])
 
 
