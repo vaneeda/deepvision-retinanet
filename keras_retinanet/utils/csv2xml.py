@@ -6,6 +6,10 @@ import csv
 
 def csv2xml(input_xml_path, csv_input_paths, orientations):
 
+    import tracemalloc
+    from tqdm import tqdm
+    tracemalloc.start()
+
     def inBounds(point, tl, br):
         x, y = point
         left, top = tl
@@ -130,7 +134,7 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
     for csv_pos, csvfile in enumerate(csv_input_paths):
         with open(csvfile, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
-            for row in reader:
+            for row in tqdm(reader):
                 if row['datetime'] in csvframedict:
                     csvframedict[row['datetime']].append({"x0": str(round(float(row['x0']))),
                                                         "y0": str(round(float(row['y0']))),
@@ -160,5 +164,12 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
     output_xml_path = input_xml_path.split(".")[0]+"_updated.xml"
     tree.write(output_xml_path, encoding="UTF-8", xml_declaration=True)
     print(f'CSV data has been exported to {output_xml_path}.')
+
+
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('lineno')
+    print("[ Top 10 ]")
+    for stat in top_stats[:10]:
+        print(stat)
 
 

@@ -1,5 +1,6 @@
 # Use an official Python runtime as a parent image
-FROM tensorflow/tensorflow:2.5.0-gpu
+# FROM tensorflow/tensorflow:2.5.0-gpu
+FROM tensorflow/tensorflow:2.9.0rc0-jupyter
 RUN echo
 
 # User configuration - override with --build-arg
@@ -29,16 +30,9 @@ RUN git clone https://github.com/vaneeda/deepvision-retinanet.git
 RUN cd deepvision-retinanet && python setup.py build_ext --inplace
 RUN cd deepvision-retinanet && pip3 install . 
 
-RUN pip3 install --trusted-host pypi.python.org numpy scipy Pillow cython matplotlib scikit-image keras==2.4.0 opencv-python h5py imgaug IPython progressbar2 pandas sklearn
+RUN pip3 install --trusted-host pypi.python.org numpy scipy Pillow cython matplotlib scikit-image keras==2.4.0 opencv-python h5py imgaug IPython progressbar2 pandas sklearn lxml
 
 COPY /snapshots/resnet50_csv_inference_10.h5 /snapshots/resnet50_csv_inference_10.h5
 
-RUN pip3 install lxml
-COPY csv2xml_docker.py /csv2xml_docker.py
-
 # Run when the container launches
-# CMD "bash"
-#
-WORKDIR /deepvision-retinanet
-CMD ["/bin/bash", "-c", "python3 keras_retinanet/bin/predict_DV.py && python3 /csv2xml_docker.py"]
-#RUN cd /deepvision-retinanet && python3 keras_retinanet/bin/predict_DV.py
+CMD ["/bin/bash", "-c", "cd /deepvision-retinanet && python3 keras_retinanet/bin/predict_DV.py"]

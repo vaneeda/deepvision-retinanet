@@ -1,0 +1,12 @@
+
+
+
+
+docker build -t ret_mem -f Dockerfile-retinanet .
+
+docker build -t ret_mem --no-cache -f Dockerfile-retinanet .
+
+
+
+
+docker run -it --gpus all --shm-size=8g --memory=12g -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash retinanet
