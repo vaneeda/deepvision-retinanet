@@ -13,6 +13,8 @@ import tensorflow as tf
 import zipfile
 import xml.etree.ElementTree as ET
 import csv
+from tqdm import tqdm
+import tracemalloc
 
 
 # use this environment flag to change which GPU to use
@@ -47,9 +49,9 @@ def read_zip_files(path_to_data):
     zip_dict = {}
     zip_files = [x for x in os.listdir(path_to_data) if x.endswith("active.zip")]
     for z in zip_files:
-        archive = zipfile.ZipFile(os.path.join(path_to_data, z), "r")
-        zip_dict[z] = archive.namelist()
-        list_of_files += archive.namelist()
+        with zipfile.ZipFile(os.path.join(path_to_data, z), "r") as archive:
+            zip_dict[z] = archive.namelist()
+            list_of_files += archive.namelist()
     return zip_dict, list_of_files
 
 
@@ -72,29 +74,39 @@ def predict_image(model, filename):
 
 
 def DV_predict(model, path_to_data, orientation, xml_file):
+
+    tracemalloc.start()
+
     path_to_data = os.path.join(path_to_data, orientation)
     dict, list_of_files = read_zip_files(path_to_data)
     df = select_data_from_xml_file(list_of_files, xml_file)
     anno = []
-    for ind in df.index:
+    for ind in tqdm(df.index):
         date = df["datetime"][ind]
         z = [key for key, value in dict.items() if str(date)+".jpg" in value]
-        archive = zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r")
-        img = archive.open(str(date)+".jpg")
-        boxes, scores, labels = predict_image(model, img)
-        anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
-        for box, score, label in zip(boxes[0], scores[0], labels[0]):
-            if score > 0.05:
+        with zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r") as archive:
+            with archive.open(str(date)+".jpg") as img:
+                boxes, scores, labels = predict_image(model, img)
                 anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
-                anno_row[2:6] = box
-                anno_row[6] = labels_to_names[label]
-                anno_row[7] = score
-                anno.append(anno_row)
-        if anno_row[7] < 0.05:
-            anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
+                for box, score, label in zip(boxes[0], scores[0], labels[0]):
+                    if score > 0.05:
+                        anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
+                        anno_row[2:6] = box
+                        anno_row[6] = labels_to_names[label]
+                        anno_row[7] = score
+                        anno.append(anno_row)
+                if anno_row[7] < 0.05:
+                    anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
     anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
     output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
     anno_df.to_csv(output_csv, index=False)
+
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('lineno')
+    print("[ Top 10 ]")
+    for stat in top_stats[:10]:
+        print(stat)
+
     return anno_df, output_csv
 
 
@@ -108,5 +120,3 @@ if __name__ == '__main__':
         csv_file_paths.append(csvpath)
 
     csv2xml(PARAMS["xml_file"], csv_file_paths, PARAMS['orientation'])
-
-
