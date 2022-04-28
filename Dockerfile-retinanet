@@ -1,7 +1,5 @@
 # Use an official Python runtime as a parent image
-# FROM tensorflow/tensorflow:2.5.0-gpu
-# FROM tensorflow/tensorflow:2.9.0rc1-gpu
-FROM tensorflow/tensorflow:2.9.0rc0-gpu-jupyter
+FROM tensorflow/tensorflow:2.5.0-gpu
 RUN echo
 
 # User configuration - override with --build-arg
@@ -26,19 +24,17 @@ RUN passwd -d $user
 
 RUN apt-get install -y libsm6 libxrender1 ffmpeg libsm6 libxext6
 
-RUN pip3 install --trusted-host pypi.python.org scipy matplotlib scikit-image h5py imgaug IPython pandas sklearn pyyaml lxml tqdm
+# Need to do both installs to make it work
+# RUN git clone https://github.com/vaneeda/deepvision-retinanet.git
+ADD https://api.github.com/repos/vaneeda/deepvision-retinanet/git/refs/heads/memory_optimization version.json
+RUN git clone -b memory_optimization https://github.com/vaneeda/deepvision-retinanet.git
+RUN cd deepvision-retinanet && python setup.py build_ext --inplace
+RUN cd deepvision-retinanet && pip3 install . 
+
+RUN pip3 install --trusted-host pypi.python.org numpy scipy Pillow cython matplotlib scikit-image keras==2.4.0 opencv-python h5py imgaug IPython progressbar2 pandas sklearn lxml tqdm
 
 COPY /snapshots/resnet50_csv_inference_10.h5 /snapshots/resnet50_csv_inference_10.h5
 
-# Need to do both installs to make it work
-ADD https://api.github.com/repos/vaneeda/deepvision-retinanet/git/refs/heads/memory_optimization version.json
-RUN git clone -b memory_optimization https://github.com/vaneeda/deepvision-retinanet.git /deepvision-retinanet
-
-# RUN git clone https://github.com/vaneeda/deepvision-retinanet.git
-RUN cd deepvision-retinanet && python setup.py build_ext --inplace
-RUN cd deepvision-retinanet && pip3 install .
-
-# RUN pip3 install --trusted-host pypi.python.org Pillow cython keras==2.4.0 opencv-python progressbar2 
-
 # Run when the container launches
 CMD ["/bin/bash", "-c", "cd /deepvision-retinanet && python3 keras_retinanet/bin/predict_DV.py"]
+
