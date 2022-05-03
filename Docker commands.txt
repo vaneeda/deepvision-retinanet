@@ -10,3 +10,31 @@ docker build -t ret_mem --no-cache -f Dockerfile-retinanet .
 
 
 docker run -it --gpus all --shm-size=8g --memory=12g -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash retinanet
+
+
+
+docker exec -it ubuntu_bash bash
+
+
+
+python 
+
+from keras_retinanet.utils.csv2xml import csv2xml
+
+input_xml_path = "/data/deepvision.xml"
+#csv_input_paths = ["/temp/deepvision_Left.csv", "/temp/deepvision_Right.csv"]
+csv_input_paths = ["/temp/deepvision_Left_xs.csv", "/temp/deepvision_Right_xs.csv"]
+orientations = ["Left","Right"]
+
+csv2xml(input_xml_path, csv_input_paths, orientations)
+
+
+
+
+from csv2xml import csv2xml
+
+input_xml_path = r"D:\Videotooloutput\20211107T0758Z_partial\deepvision.xml"
+csv_input_paths = [r"D:\Videotooloutput\20211107T0758Z_partial\deepvision_Left.csv", r"D:\Videotooloutput\20211107T0758Z_partial\deepvision_Right.csv"]
+orientations = ["Left","Right"]
+
+csv2xml(input_xml_path, csv_input_paths, orientations)

@@ -14,7 +14,6 @@ import zipfile
 import xml.etree.ElementTree as ET
 import csv
 from tqdm import tqdm
-import tracemalloc
 
 
 # use this environment flag to change which GPU to use
@@ -75,13 +74,11 @@ def predict_image(model, filename):
 
 def DV_predict(model, path_to_data, orientation, xml_file):
 
-    tracemalloc.start()
-
     path_to_data = os.path.join(path_to_data, orientation)
     dict, list_of_files = read_zip_files(path_to_data)
     df = select_data_from_xml_file(list_of_files, xml_file)
     anno = []
-    for ind in tqdm(df.index):
+    for ind in tqdm(df.index, desc=f"Predicting on images from the {orientation} camera"):
         date = df["datetime"][ind]
         z = [key for key, value in dict.items() if str(date)+".jpg" in value]
         with zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r") as archive:
@@ -97,15 +94,10 @@ def DV_predict(model, path_to_data, orientation, xml_file):
                         anno.append(anno_row)
                 if anno_row[7] < 0.05:
                     anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
+        
     anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
     output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
     anno_df.to_csv(output_csv, index=False)
-
-    snapshot = tracemalloc.take_snapshot()
-    top_stats = snapshot.statistics('lineno')
-    print("[ Top 10 ]")
-    for stat in top_stats[:10]:
-        print(stat)
 
     return anno_df, output_csv
 
@@ -113,10 +105,12 @@ def DV_predict(model, path_to_data, orientation, xml_file):
 if __name__ == '__main__':
     PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config.yaml'))
     labels_to_names = PARAMS["classes"]
-    model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
+    model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50', compile=False)
     csv_file_paths = []
     for orientation in PARAMS['orientation']:
         _, csvpath = DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
         csv_file_paths.append(csvpath)
 
     csv2xml(PARAMS["xml_file"], csv_file_paths, PARAMS['orientation'])
+
+
