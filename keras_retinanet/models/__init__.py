@@ -67,7 +67,7 @@ def backbone(backbone_name):
     return b(backbone_name)
 
 
-def load_model(filepath, backbone_name='resnet50', compile=True):
+def load_model(filepath, backbone_name='resnet50'):
     """ Loads a retinanet model using the correct custom objects.
 
     Args
@@ -84,7 +84,7 @@ def load_model(filepath, backbone_name='resnet50', compile=True):
         ValueError: In case of an invalid savefile.
     """
     from tensorflow import keras
-    return keras.models.load_model(filepath, custom_objects=backbone(backbone_name).custom_objects, compile=compile)
+    return keras.models.load_model(filepath, custom_objects=backbone(backbone_name).custom_objects)
 
 
 def convert_model(model, nms=True, class_specific_filter=True, anchor_params=None, **kwargs):
