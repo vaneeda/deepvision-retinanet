@@ -77,29 +77,29 @@ def DV_predict(model, path_to_data, orientation, xml_file):
     path_to_data = os.path.join(path_to_data, orientation)
     dict, list_of_files = read_zip_files(path_to_data)
     df = select_data_from_xml_file(list_of_files, xml_file)
-    anno = []
-    for ind in tqdm(df.index, desc=f"Predicting on images from the {orientation} camera"):
-        date = df["datetime"][ind]
-        z = [key for key, value in dict.items() if str(date)+".jpg" in value]
-        with zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r") as archive:
-            with archive.open(str(date)+".jpg") as img:
-                boxes, scores, labels = predict_image(model, img)
-                anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
-                for box, score, label in zip(boxes[0], scores[0], labels[0]):
-                    if score > 0.05:
-                        anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
-                        anno_row[2:6] = box
-                        anno_row[6] = labels_to_names[label]
-                        anno_row[7] = score
-                        anno.append(anno_row)
-                if anno_row[7] < 0.05:
-                    anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
-        
-    anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
-    output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
-    anno_df.to_csv(output_csv, index=False)
 
-    return anno_df, output_csv
+    output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
+    with open(output_csv, "w") as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        print(csv.field_size_limit())
+        writer.writerow(['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
+
+        for ind in tqdm(df.index, desc=f"Predicting on images from the {orientation} camera"):
+            date = df["datetime"][ind]
+            z = [key for key, value in dict.items() if str(date)+".jpg" in value]
+            with zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r") as archive:
+                with archive.open(str(date)+".jpg") as img:
+                    boxes, scores, labels = predict_image(model, img)
+                    for box, score, label in zip(boxes[0], scores[0], labels[0]):
+                        if score > 0.05:
+                            anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
+                            anno_row[2:6] = box
+                            anno_row[6] = labels_to_names[label]
+                            anno_row[7] = score
+                            # anno.append(anno_row)
+                            writer.writerow(anno_row)
+
+    return output_csv
 
 
 if __name__ == '__main__':
@@ -108,9 +108,7 @@ if __name__ == '__main__':
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50', compile=False)
     csv_file_paths = []
     for orientation in PARAMS['orientation']:
-        _, csvpath = DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
+        csvpath = DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
         csv_file_paths.append(csvpath)
 
     csv2xml(PARAMS["xml_file"], csv_file_paths, PARAMS['orientation'])
-
-
