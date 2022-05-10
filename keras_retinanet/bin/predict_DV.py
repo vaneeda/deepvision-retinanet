@@ -72,7 +72,7 @@ def predict_image(model, filename):
     return boxes, scores, labels
 
 
-def DV_predict(model, path_to_data, orientation, xml_file):
+def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
 
     path_to_data = os.path.join(path_to_data, orientation)
     dict, list_of_files = read_zip_files(path_to_data)
@@ -91,13 +91,15 @@ def DV_predict(model, path_to_data, orientation, xml_file):
                 with archive.open(str(date)+".jpg") as img:
                     boxes, scores, labels = predict_image(model, img)
                     for box, score, label in zip(boxes[0], scores[0], labels[0]):
-                        if score > 0.05:
+                        if score > score_threshold:
                             anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
                             anno_row[2:6] = box
                             anno_row[6] = labels_to_names[label]
                             anno_row[7] = score
                             # anno.append(anno_row)
                             writer.writerow(anno_row)
+        # if anno_row[7] < 0.05:
+        #     writer.writerow([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
 
     return output_csv
 
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50', compile=False)
     csv_file_paths = []
     for orientation in PARAMS['orientation']:
-        csvpath = DV_predict(model, PARAMS['path_to_data'], orientation, PARAMS["xml_file"])
+        csvpath = DV_predict(model, PARAMS['path_to_data'], PARAMS['score_threshold'], orientation, PARAMS["xml_file"])
         csv_file_paths.append(csvpath)
 
     csv2xml(PARAMS["xml_file"], csv_file_paths, PARAMS['orientation'])
