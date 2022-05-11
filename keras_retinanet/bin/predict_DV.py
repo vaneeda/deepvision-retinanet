@@ -1,4 +1,13 @@
 import os
+# Change log level for tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+"""
+Levels: 
+    0 = all messages are logged (default behavior)
+    1 = INFO messages are not printed
+    2 = INFO and WARNING messages are not printed
+    3 = INFO, WARNING, and ERROR messages are not printed
+"""
 import sys
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -102,12 +111,29 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
 
     return output_csv
 
+from tensorflow.python.client import device_lib
+
+# def print_available_gpus():
+#     local_device_protos = device_lib.list_local_devices()
+#     print([x.name for x in local_device_protos if x.device_type == 'GPU'])
+
+def print_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    devs = [x.physical_device_desc for x in local_device_protos if x.device_type in ['GPU']]
+    if devs:
+        print(f"Available GPUs:")
+        for d in devs:
+            print(f" - {d}")
+    else:
+        print("NO available GPU.")
+
 
 if __name__ == '__main__':
     PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config.yaml'))
     labels_to_names = PARAMS["classes"]
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50', compile=False)
     csv_file_paths = []
+    print_available_gpus()
     for orientation in PARAMS['orientation']:
         csvpath = DV_predict(model, PARAMS['path_to_data'], PARAMS['score_threshold'], orientation, PARAMS["xml_file"])
         csv_file_paths.append(csvpath)
