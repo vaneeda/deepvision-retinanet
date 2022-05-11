@@ -81,7 +81,6 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
     output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
     with open(output_csv, "w") as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
-        print(csv.field_size_limit())
         writer.writerow(['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
 
         for ind in tqdm(df.index, desc=f"Predicting on images from the {orientation} camera"):
