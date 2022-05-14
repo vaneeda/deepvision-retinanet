@@ -156,7 +156,8 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
 
 
     # Specify the name of the outputfile and create an empty file with it
-    output_xml_path = input_xml_path.split(".")[0]+"_updated.xml"
+    # output_xml_path = input_xml_path.split(".")[0]+"_updated.xml"
+    output_xml_path = input_xml_path
     # Set separator and encoder used to encode the strings that will be passed to the xml output file
     head_separator = "  "#"\u0009"
     encoder = "utf-8"
