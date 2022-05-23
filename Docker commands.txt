@@ -1,40 +1,18 @@
 
+--> Image name: retinanet
 
 
-
-docker build -t ret_mem -f Dockerfile-retinanet .
-
-docker build -t ret_mem --no-cache -f Dockerfile-retinanet .
-
-
+# Build Image
+docker build -f Dockerfile-retinanet -t retinanet:latest .
+docker build -f Dockerfile-retinanet -t retinanet:latest --no-cache .			<-- build without cached data
+docker build -f Dockerfile-retinanet -t retinanet:latest --build-arg USER_ID=$UID .	<-- session with user instead of root
 
 
-docker run -it --gpus all --shm-size=8g --memory=12g -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash retinanet
+# Run container
+docker run -it --gpus all -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash retinanet:latest
+docker run -it --gpus all -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash --name=retinanet retinanet:latest
+docker run -it --gpus all -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash --shm-size=8g --memory=12g retinanet:latest
 
 
-
-docker exec -it ubuntu_bash bash
-
-
-
-python 
-
-from keras_retinanet.utils.csv2xml import csv2xml
-
-input_xml_path = "/data/deepvision.xml"
-#csv_input_paths = ["/temp/deepvision_Left.csv", "/temp/deepvision_Right.csv"]
-csv_input_paths = ["/temp/deepvision_Left_xs.csv", "/temp/deepvision_Right_xs.csv"]
-orientations = ["Left","Right"]
-
-csv2xml(input_xml_path, csv_input_paths, orientations)
-
-
-
-
-from csv2xml import csv2xml
-
-input_xml_path = r"D:\Videotooloutput\20211107T0758Z_partial\deepvision.xml"
-csv_input_paths = [r"D:\Videotooloutput\20211107T0758Z_partial\deepvision_Left.csv", r"D:\Videotooloutput\20211107T0758Z_partial\deepvision_Right.csv"]
-orientations = ["Left","Right"]
-
-csv2xml(input_xml_path, csv_input_paths, orientations)
+# Attach to running docker
+docker exec -it retinanet_container bash
