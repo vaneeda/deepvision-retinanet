@@ -1,6 +1,9 @@
 
 --> Image name: retinanet
 
+# Pull github repository from memory_optmization branch
+git clone -b memory_optimization https://github.com/vaneeda/deepvision-retinanet.git
+
 
 # Build Image
 docker build -f Dockerfile-retinanet -t retinanet:latest .
