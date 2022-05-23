@@ -1,5 +1,5 @@
 
---> Image name: retinanet
+--> Image name: retinanet:latest
 
 # Pull github repository from memory_optmization branch
 git clone -b memory_optimization https://github.com/vaneeda/deepvision-retinanet.git
