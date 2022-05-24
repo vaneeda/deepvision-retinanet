@@ -124,9 +124,6 @@ if __name__ == '__main__':
     PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__),
                                                   'detect_config_predict_filter_csv_DV.yaml'))
     snapshot_path = PARAMS["snapshot_path"]
-    model = models.load_model(snapshot_path, backbone_name='resnet50')
-    model_name = os.path.basename(os.path.dirname(snapshot_path))
-    num = os.path.basename(snapshot_path).split(".")[0][-2:]
     labels_to_names = PARAMS["classes"]
 
     stations = PARAMS["stations"] if PARAMS["stations"] else os.listdir(PARAMS['path_to_data'])
@@ -134,13 +131,11 @@ if __name__ == '__main__':
         print("Station:", station)
         path_to_data = os.path.join(PARAMS['path_to_data'], station)
         path_to_xml_file = os.path.join(path_to_data, PARAMS["xml_file"])
-        path_to_output = os.path.join(PARAMS["output"], station, model_name)
+        path_to_output = os.path.join(PARAMS["output"], station)
         pred_filter = os.path.join(PARAMS["output"], station, station + "_filtered.csv")
         makedirs(os.path.dirname(pred_filter))
         csv_file_paths = []
         for orientation in PARAMS['orientation']:
-            output_csv = os.path.join(path_to_output,
-                                      station + "_" + orientation + "_predictions_inf_" + str(num) + ".csv")
             if os.path.isfile(pred_filter):
                 print("Images have already been filtered")
             else:
