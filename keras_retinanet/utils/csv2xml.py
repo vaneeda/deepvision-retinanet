@@ -131,6 +131,10 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
     tree = ET.parse(input_xml_path)
     root = tree.getroot()
 
+    if not len(root[1]): # If no existing frame entries in xml file, exit the method
+        print(f"No frames in {input_xml_path.split('/')[-1]} file, no changes applied to it.")
+        return
+
     # Get csv file and import data to dict
     csvframedict = {}
     print(csv_input_paths)
@@ -156,8 +160,7 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
 
 
     # Specify the name of the outputfile and create an empty file with it
-    # output_xml_path = input_xml_path.split(".")[0]+"_updated.xml"
-    output_xml_path = input_xml_path
+    output_xml_path = input_xml_path.split(".")[0]+"_updated.xml"
     # Set separator and encoder used to encode the strings that will be passed to the xml output file
     head_separator = "  "#"\u0009"
     encoder = "utf-8"
@@ -182,22 +185,28 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
     frame_string += f'>\n{head_separator}{head_separator}'
     out_xml_fd.write(frame_string.encode(encoder))
 
-    # For each child in csv, update framework"
-    for child in tqdm(root[1][:-1], desc="Parsing csv data to xml file"):
-        child_cpy = copy(child)
-        if child.attrib["time"] in csvframedict:
-            framework_elem = create_framework(csvframedict[child.attrib["time"]])
-            child_cpy.insert(-1, framework_elem)
-            indent_xml_elements(child_cpy, head_separator, level=2)
-        out_xml_fd.write(ET.tostring(child_cpy, encoding=encoder))
+    # For each child in csv except last one, update framework"
+    root_len =  len(root[1])
+    pbar = tqdm(root_len, desc="Parsing csv data to xml file")
+    if root_len>1:
+        for child in root[1][:-1]:
+            child_cpy = copy(child)
+            if child_cpy.attrib["time"] in csvframedict:
+                framework_elem = create_framework(csvframedict[child_cpy.attrib["time"]])
+                child_cpy.insert(-1, framework_elem)
+                indent_xml_elements(child_cpy, head_separator, level=2)
+            out_xml_fd.write(ET.tostring(child_cpy, encoding=encoder))
+            pbar.update(1)
     # The tail of the last child will be set differently
     child_cpy = copy(root[1][-1])
     if child_cpy.attrib["time"] in csvframedict:
-        framework_elem = create_framework(csvframedict[child.attrib["time"]])
+        framework_elem = create_framework(csvframedict[child_cpy.attrib["time"]])
         child_cpy.insert(-1, framework_elem)
         indent_xml_elements(child_cpy, head_separator, level=2)
         child_cpy.tail = f"\n{head_separator}"
     out_xml_fd.write(ET.tostring(child_cpy, encoding=encoder))
+    pbar.update(1)
+    pbar.close()
 
     # Add ending tags for Deepvision and Frames elements
     out_xml_fd.write("</frames>\n".encode(encoder))
