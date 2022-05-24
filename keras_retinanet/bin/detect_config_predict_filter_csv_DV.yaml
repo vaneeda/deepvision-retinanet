@@ -1,0 +1,12 @@
+# Config file
+
+classes: "fish_4_classes.csv"
+#classes: {0: 'bluewhiting', 1: 'herring', 2: 'mackerel', 3: 'mesopelagic'}
+snapshot_path: "/home/a5515/data/deepvision/retinanet/snapshots/real_val_sim/retrained_from_inf36_allbkg_real_val_sim_semi_annotated/resnet50_csv_inference_10.h5"
+score_threshold: 0.47
+path_to_filter_snapshot: '/home/a5515/data/filtering_images/output/ckpt/mobilenet.001-0.32.hdf5'
+path_to_data: '/media/a5515/Seagate Hub/Mai_tokt_GO_sars_2022/SessionsUnprocessed/'
+stations: ["20220514T1426Z"]
+orientation: ["Left", "Right"]
+xml_file: "deepvision.xml"
+output: "/home/a5515/data/deepvision_predictions/2022/"
