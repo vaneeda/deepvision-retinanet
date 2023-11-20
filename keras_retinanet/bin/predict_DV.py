@@ -60,11 +60,11 @@ def select_data_from_xml_file(list_of_files, xml_file):
     return df
 
 
-def predict_image(model, filename):
+def predict_image(model, filename,min_img_size):
     image = read_image_bgr(filename)
     # preprocess image for network
     image = preprocess_image(image)
-    image, scale = resize_image(image)
+    image, scale = resize_image(image, min_side=min_img_size)
     # process image
     boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
     boxes /= scale
@@ -81,7 +81,7 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
         z = [key for key, value in dict.items() if str(date)+".jpg" in value]
         archive = zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r")
         img = archive.open(str(date)+".jpg")
-        boxes, scores, labels = predict_image(model, img)
+        boxes, scores, labels = predict_image(model, img, PARAMS["min_img_size"])
         anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
         for box, score, label in zip(boxes[0], scores[0], labels[0]):
             if score > score_threshold:

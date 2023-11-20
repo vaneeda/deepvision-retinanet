@@ -1,6 +1,7 @@
 # Config file
 
 path_to_data: '/data/'
+min_img_size: 800
 score_threshold: 0.47
 orientation: ['Left','Right']
 xml_file: '/temp/deepvision.xml'
