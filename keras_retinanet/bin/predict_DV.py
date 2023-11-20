@@ -102,6 +102,8 @@ if __name__ == '__main__':
     PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
     labels_to_names = PARAMS["classes"]
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
+    if not "inference" in os.path.basename(PARAMS["snapshot_path"]):
+        model = models.convert_model(model)
     csv_file_paths = []
     for orientation in PARAMS['orientation']:
         _, csvpath = DV_predict(model, PARAMS['path_to_data'], PARAMS['score_threshold'], orientation, PARAMS["xml_file"])
