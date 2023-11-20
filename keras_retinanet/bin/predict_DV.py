@@ -93,13 +93,17 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
         if anno_row[7] < 0.05:
             anno.append([date, df["depth"][ind], 0, 0, 0, 0, 0, 0])
     anno_df = pd.DataFrame(anno, columns=['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
+    if PARAMS["opt_thresholds"]:
+        anno_df["score"] = [j if j > PARAMS["opt_thresholds"][i] else 0 for i, j in
+                            zip(anno_df["label"], anno_df["score"])]
+        anno_df = anno_df[anno_df["score"] > 0]
     output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
     anno_df.to_csv(output_csv, index=False)
     return anno_df, output_csv
 
 
 if __name__ == '__main__':
-    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
+    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local_meso.yaml'))
     labels_to_names = PARAMS["classes"]
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
     if not "inference" in os.path.basename(PARAMS["snapshot_path"]):
