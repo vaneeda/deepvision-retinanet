@@ -103,7 +103,7 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
 
 
 if __name__ == '__main__':
-    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local_meso.yaml'))
+    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_meso.yaml'))
     labels_to_names = PARAMS["classes"]
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50')
     if not "inference" in os.path.basename(PARAMS["snapshot_path"]):
