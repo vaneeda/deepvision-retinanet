@@ -1,5 +1,7 @@
 # Use an official Python runtime as a parent image
 FROM tensorflow/tensorflow:2.5.0-gpu
+RUN rm /etc/apt/sources.list.d/cuda.list
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/$distro/$arch/3bf863cc.pub
 RUN echo
 
 # User configuration - override with --build-arg
