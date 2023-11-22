@@ -90,15 +90,15 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
                 with archive.open(str(date)+".jpg") as img:
                     boxes, scores, labels = predict_image(model, img, PARAMS["min_img_size"])
                     for box, score, label in zip(boxes[0], scores[0], labels[0]):
-                        if PARAMS["opt_thresholds"]:
-                            if score >= PARAMS["opt_thresholds"][labels_to_names[label]]:
-                                anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
-                                anno_row[2:6] = box
-                                anno_row[6] = labels_to_names[label]
-                                anno_row[7] = score
-                                writer.writerow(anno_row)
-                        else:
-                            if score >= score_threshold:
+                        if score >= score_threshold:
+                            if PARAMS["opt_thresholds"]:
+                                if score >= PARAMS["opt_thresholds"][labels_to_names[label]]:
+                                    anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
+                                    anno_row[2:6] = box
+                                    anno_row[6] = labels_to_names[label]
+                                    anno_row[7] = score
+                                    writer.writerow(anno_row)
+                            else:
                                 anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
                                 anno_row[2:6] = box
                                 anno_row[6] = labels_to_names[label]
@@ -108,7 +108,7 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
 
 
 if __name__ == '__main__':
-    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_meso.yaml'))
+    PARAMS = load_config(config_path=os.path.join(os.path.dirname(__file__), 'detect_config_local.yaml'))
     labels_to_names = PARAMS["classes"]
     model = models.load_model(PARAMS["snapshot_path"], backbone_name='resnet50', compile=False)
     csv_file_paths = []
