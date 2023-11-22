@@ -6,7 +6,7 @@ score_threshold: 0.05
 opt_thresholds: {"maurolicus": 0.250, "periphylla": 0.810, "krill": 0.210, "benthosema": 0.640, "sergestes": 0.330, "gonatus": 0.360}
 orientation: ['Left','Right']
 xml_file: '/temp/deepvision.xml'
-snapshot_path: '/snapshots/resnet50_csv_inference_32.h5'
+snapshot_path: '/snapshots/resnet50_csv_inference.h5'
 classes: {0: 'maurolicus', 1: 'periphylla', 2: 'krill', 3: 'benthosema', 4: 'sergestes', 5: 'gonatus'}
 
 
