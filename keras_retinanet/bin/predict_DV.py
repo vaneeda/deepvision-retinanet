@@ -61,7 +61,7 @@ def select_data_from_xml_file(list_of_files, xml_file):
     return df
 
 
-def predict_image(model, filename,min_img_size):
+def predict_image(model, filename, min_img_size):
     image = read_image_bgr(filename)
     # preprocess image for network
     image = preprocess_image(image)
@@ -79,7 +79,7 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
     df = select_data_from_xml_file(list_of_files, xml_file)
 
     output_csv = xml_file.split(".")[0] + "_" + orientation + ".csv"
-    with (open(output_csv, "w") as csvfile):
+    with open(output_csv, "w") as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(['datetime', 'depth', 'x0', 'y0', 'x1', 'y1', 'label', 'score'])
 
@@ -88,21 +88,20 @@ def DV_predict(model, path_to_data, score_threshold, orientation, xml_file):
             z = [key for key, value in dict.items() if str(date)+".jpg" in value]
             with zipfile.ZipFile(os.path.join(path_to_data, z[0]), "r") as archive:
                 with archive.open(str(date)+".jpg") as img:
-                    boxes, scores, labels = predict_image(model, img)
+                    boxes, scores, labels = predict_image(model, img, PARAMS["min_img_size"])
                     for box, score, label in zip(boxes[0], scores[0], labels[0]):
-                        lab = labels_to_names[label]
                         if PARAMS["opt_thresholds"]:
-                            if score >= PARAMS["opt_thresholds"][lab]:
+                            if score >= PARAMS["opt_thresholds"][labels_to_names[label]]:
                                 anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
                                 anno_row[2:6] = box
-                                anno_row[6] = labels_to_names[lab]
+                                anno_row[6] = labels_to_names[label]
                                 anno_row[7] = score
                                 writer.writerow(anno_row)
                         else:
                             if score >= score_threshold:
                                 anno_row = [date, df["depth"][ind], 0, 0, 0, 0, 0, 0]
                                 anno_row[2:6] = box
-                                anno_row[6] = labels_to_names[lab]
+                                anno_row[6] = labels_to_names[label]
                                 anno_row[7] = score
                                 writer.writerow(anno_row)
     return output_csv
