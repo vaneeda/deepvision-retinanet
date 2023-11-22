@@ -5,5 +5,5 @@ min_img_size: 800
 score_threshold: 0.47
 orientation: ['Left','Right']
 xml_file: '/temp/deepvision.xml'
-snapshot_path: '/snapshots/resnet50_csv_inference_10.h5'
+snapshot_path: '/snapshots/resnet50_csv_inference.h5'
 classes:  {0: 'bluewhiting', 1: 'herring', 2: 'mackerel', 3: 'mesopelagic'}

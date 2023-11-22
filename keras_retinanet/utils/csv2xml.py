@@ -2,9 +2,12 @@ import uuid
 import datetime
 from lxml import etree as ET
 import csv
+from copy import copy
 
 
 def csv2xml(input_xml_path, csv_input_paths, orientations):
+
+    from tqdm import tqdm
 
     def inBounds(point, tl, br):
         x, y = point
@@ -43,15 +46,16 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
                         partials[np] = True
         return partials
 
-    def indent_xml_elements(elem, level=0):
-        i = "\n" + level*"  "
+    def indent_xml_elements(elem, head_sep, level=0):
+        # i = "\n" + level*"  "
+        i = "\n" + level*f"{head_sep}"
         if len(elem):
             if not elem.text or not elem.text.strip():
-                elem.text = i + "  "
+                elem.text = i + f"{head_sep}"
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
             for elem in elem:
-                indent_xml_elements(elem, level+1)
+                indent_xml_elements(elem, head_sep, level+1)
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
         else:
@@ -95,6 +99,9 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
             ET.SubElement(obj, bbox_side,
                 attrib={"x0": object_data['x0'], "y0": object_data['y0'], "x1": object_data['x1'], "y1": object_data['y1']})
 
+        if framework_element is None:
+            print("returning none")
+
         return framework_element
 
     # Initialize static framework information 
@@ -124,13 +131,18 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
     tree = ET.parse(input_xml_path)
     root = tree.getroot()
 
+    if not len(root[1]): # If no existing frame entries in xml file, exit the method
+        print(f"No frames in {input_xml_path.split('/')[-1]} file, no changes applied to it.")
+        return
+
     # Get csv file and import data to dict
     csvframedict = {}
     print(csv_input_paths)
     for csv_pos, csvfile in enumerate(csv_input_paths):
-        with open(csvfile, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
+        with open(csvfile, newline="") as csvf:
+            reader = csv.DictReader(csvf)
+
+            for row in tqdm(reader, desc=f"Importing data from {csvfile}"):
                 if row['datetime'] in csvframedict:
                     csvframedict[row['datetime']].append({"x0": str(round(float(row['x0']))),
                                                         "y0": str(round(float(row['y0']))),
@@ -146,19 +158,64 @@ def csv2xml(input_xml_path, csv_input_paths, orientations):
                                                     "species": row['label'],
                                                     "confidence": row['score'], "orientation": orientations[csv_pos]}]
 
-    # For each child in csv, update framework
-    for child in root[1]:
-        if child.attrib["time"] in csvframedict:
-            # Generate framework with random data and add it to the element tree
-            framework_elem = create_framework(csvframedict[child.attrib["time"]])
-            child.insert(-1, framework_elem)
 
-    # print(ET.dump(root)) # print root data
-
-    # Update xml file
-    indent_xml_elements(root)
+    # Specify the name of the outputfile and create an empty file with it
     output_xml_path = input_xml_path.split(".")[0]+"_updated.xml"
-    tree.write(output_xml_path, encoding="UTF-8", xml_declaration=True)
+    # Set separator and encoder used to encode the strings that will be passed to the xml output file
+    head_separator = "  "#"\u0009"
+    encoder = "utf-8"
+
+    # Open and initialize the output xml file
+    out_xml_fd = open(output_xml_path, "wb")
+    out_xml_fd.write(r'<?xml version="1.0" encoding="utf-8"?>'.encode(encoder))
+    out_xml_fd.write('\n'.encode(encoder))
+    out_xml_fd.write(r'<deepvision xmlns:ns="http://www.deepvision.no/formats/deepvision/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="deepvision.xsd">'.encode(encoder))
+    out_xml_fd.write(f'\n{head_separator}'.encode(encoder))
+
+    # Get Info element and write it to output file
+    child_cpy = copy(root[0])
+    indent_xml_elements(child_cpy, head_separator, level=1)
+    out_xml_fd.write(ET.tostring(child_cpy, encoding=encoder))
+
+    # Get and store the first part of the "frames" element
+    frame_string = '<frames'
+    frame_elem = root.find("frames")
+    for att in frame_elem.attrib:
+        frame_string += f' {att}="{frame_elem.attrib[att]}"'
+    frame_string += f'>\n{head_separator}{head_separator}'
+    out_xml_fd.write(frame_string.encode(encoder))
+
+    # For each child in csv except last one, update framework"
+    root_len =  len(root[1])
+    pbar = tqdm(root_len, desc="Parsing csv data to xml file")
+    if root_len>1:
+        for child in root[1][:-1]:
+            child_cpy = copy(child)
+            if child_cpy.attrib["time"] in csvframedict:
+                framework_elem = create_framework(csvframedict[child_cpy.attrib["time"]])
+                child_cpy.insert(-1, framework_elem)
+                indent_xml_elements(child_cpy, head_separator, level=2)
+            out_xml_fd.write(ET.tostring(child_cpy, encoding=encoder))
+            pbar.update(1)
+    # The tail of the last child will be set differently
+    child_cpy = copy(root[1][-1])
+    if child_cpy.attrib["time"] in csvframedict:
+        framework_elem = create_framework(csvframedict[child_cpy.attrib["time"]])
+        child_cpy.insert(-1, framework_elem)
+        indent_xml_elements(child_cpy, head_separator, level=2)
+        child_cpy.tail = f"\n{head_separator}"
+    out_xml_fd.write(ET.tostring(child_cpy, encoding=encoder))
+    pbar.update(1)
+    pbar.close()
+
+    # Add ending tags for Deepvision and Frames elements
+    out_xml_fd.write("</frames>\n".encode(encoder))
+    out_xml_fd.write("</deepvision>".encode(encoder))
+
+    # Close output file
+    out_xml_fd.close()
+
+    # tree.write(output_xml_path, encoding="UTF-8", xml_declaration=True)
     print(f'CSV data has been exported to {output_xml_path}.')
 
 

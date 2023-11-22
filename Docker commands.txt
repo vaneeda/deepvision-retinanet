@@ -1,0 +1,21 @@
+
+--> Image name: retinanet:latest
+
+# Pull github repository from memory_optmization branch
+git clone -b memory_optimization https://github.com/vaneeda/deepvision-retinanet.git
+
+
+# Build Image
+docker build -f Dockerfile-retinanet -t retinanet:latest .
+docker build -f Dockerfile-retinanet -t retinanet:latest --no-cache .			<-- build without cached data
+docker build -f Dockerfile-retinanet -t retinanet:latest --build-arg USER_ID=$UID .	<-- session with user instead of root
+
+
+# Run container
+docker run -it --gpus all --rm -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash retinanet:latest
+docker run -it --gpus all --rm -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash --name=retinanet retinanet:latest
+docker run -it --gpus all --rm -v D:\Videotooloutput\20211107T0758Z:/data -v D:\Videotooloutput\20211107T0758Z_partial:/temp --entrypoint bash --shm-size=8g --memory=12g retinanet:latest
+
+
+# Attach to running docker
+docker exec -it retinanet_container bash
