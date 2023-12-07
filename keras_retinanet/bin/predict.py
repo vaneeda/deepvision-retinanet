@@ -119,8 +119,8 @@ if __name__ == "__main__":
         # filter = os.path.join(PARAMS["path_to_filter"],
         #                                   station + "_filtered.csv")
         for orientation in PARAMS["orientation"]:
-            output_csv = os.path.join(path_to_output,
-                                      station + "_" + orientation + "_predictions_inf_" + str(num) + ".csv")
+            name = "_".join([station, orientation, "pred_inf", num])
+            output_csv = os.path.join(path_to_output, name + ".csv")
             if not os.path.exists(output_csv):
                 anno_df = DV_predict(model, path_to_data, orientation)
                 anno_df = anno_df.sort_values(by="datetime")
@@ -128,20 +128,19 @@ if __name__ == "__main__":
             else:
                 anno_df = pd.read_csv(output_csv)
 
-            if PARAMS["opt_thresholds"]:
-                anno_df["score"] = [j if j > PARAMS["opt_thresholds"][i] else 0 for i, j in
+            if PARAMS["opt_thres"]:
+                anno_df["score"] = [j if j > PARAMS["opt_thres"][i] else 0 for i, j in
                                           zip(anno_df["label"], anno_df["score"])]
                 anno_df = anno_df[anno_df["score"] > 0]
-                name = "_opt_thresholds"
+                thres = "opt_thres"
             else:
                 anno_df = anno_df[anno_df["score"] >= PARAMS["score_threshold"]]
-                name = "_score_threshold_" + str(PARAMS["score_threshold"])
+                thres = "score_threshold_" + str(PARAMS["score_threshold"])
 
             pred, labels = convert_annotations_to_num_instances_per_class(anno_df)
-            pred.to_csv(output_csv.split(".")[0] + name + "_one-hot.csv", index=False)
-            path_to_save_images = os.path.join(path_to_output, station + "_" + orientation + name + "_inf_" + str(num))
-
+            pred.to_csv("_".join([output_csv.split(".")[0], thres, "one-hot.csv"]), index=False)
             print(pred[labels].sum())
             cmap = plt.cm.get_cmap(PARAMS["colormap"], len(labels))
             cm = {val: cmap(c) for (c, val) in enumerate(labels)}
+            path_to_save_images = os.path.join(path_to_output, "_".join([name, thres, PARAMS["colormap"]]))
             plot_save_bubbleplot_histogram(pred, labels, cm, path_to_xml_file, path_to_save_images)
