@@ -14,7 +14,7 @@ from pathlib import Path
 from keras_retinanet import models
 from keras_retinanet.utils.image import read_image_bgr, preprocess_image, resize_image
 from keras_retinanet.utils.bubbleplot import convert_annotations_to_num_instances_per_class, plot_save_bubbleplot_histogram
-
+import matplotlib.pyplot as plt
 
 
 def get_session():
@@ -142,4 +142,6 @@ if __name__ == "__main__":
             path_to_save_images = os.path.join(path_to_output, station + "_" + orientation + name + "_inf_" + str(num))
 
             print(pred[labels].sum())
-            plot_save_bubbleplot_histogram(pred, labels, path_to_xml_file, path_to_save_images)
+            cmap = plt.cm.get_cmap(PARAMS["colormap"], len(labels))
+            cm = {val: cmap(c) for (c, val) in enumerate(labels)}
+            plot_save_bubbleplot_histogram(pred, labels, cm, path_to_xml_file, path_to_save_images)
