@@ -26,7 +26,6 @@ def convert_annotations_to_num_instances_per_class(pred):
 def dv_xml_to_csv(xml_file):
     tree = ET.parse(xml_file)
     root = tree.getroot()
-
     header = ('datetime', 'time_elapsed', 'folder', 'depth', 'active')
     table = []
     count = 0
@@ -36,8 +35,7 @@ def dv_xml_to_csv(xml_file):
             depth = frame.get("depth").replace(",", ".")
             time = frame.get('time')
             folder = frame.get('folder')
-            t = datetime((int(time[:4])), int(time[4:6]), int(time[6:8]), int(time[8:10]),
-                         int(time[10:12]), int(time[12:14]), int(time[14:]) * 1000)
+            t = datetime.strptime(str(time), "%Y%m%d%H%M%S%f")
             if count == 0:
                 t0 = t
             time_elapsed = (t - t0).total_seconds()
@@ -64,50 +62,60 @@ def prepare_csv(pred, path_to_xml_file):
 
 def plot_save_bubbleplot_histogram(pred, classes, cm, path_to_xml_file, path_to_save_images=None):
     pred = prepare_csv(pred, path_to_xml_file)
-    pred["time (min)"] = (pred['time_elapsed'] / 60).astype(int)
-    ST = pred.groupby('time (min)')[classes].sum()
-    ST = ST.reset_index()
-    figure = plt.figure(figsize=(16, 10))
-    if "depth" not in pred.columns:
-        ST.plot('time (min)', classes, kind='bar', stacked=True, color=cm, fontsize=6)
+    pred["t (min)"] = (pred['time_elapsed'] / 60).astype(int)
+    pred = pred.drop(columns=["folder", "time_elapsed"])
+    cl = []
+    dic = {"datetime": [], "t (min)": [], "avg_depth": []}
+    for idx, group in pred.groupby("t (min)"):
+        dic["datetime"].append(group["datetime"].iloc[0])
+        dic["t (min)"].append(idx)
+        dic["avg_depth"].append(group["depth"].mean())
+        v = [i for i in group[classes].sum().to_dict().values()]
+        cl.append(v)
+    df = pd.DataFrame(dic)
+    df[classes] = cl
+
+    df["time"] = [datetime.strptime(str(t), "%Y%m%d%H%M%S%f").time().isoformat(timespec='minutes') for t in df["datetime"]]
+
+    gs = gridspec.GridSpec(2, 1, height_ratios=[2, 1])
+    ax0 = plt.subplot(gs[0])
+    #ax0.set_title("Station "+str(station))
+    df.plot("time", classes, kind='bar', stacked=True, color=cm, ax=ax0, fontsize=6)
+    ax1 = plt.subplot(gs[1], sharex=ax0)
+
+    df.plot(kind='line', x="time", y='avg_depth', rot=90, color='gray', ax=ax1, alpha=0.3, fontsize=10)
+    for i in classes:
+        sct = scatter(df["time"], df["avg_depth"], c=cm[i],
+                      s=df[i], linewidths=2, edgecolor=cm[i], label=i)
+    sct.set_alpha(0.5)
+    ax0.set_xlabel('time')
+    ax0.set_ylabel('Fish count per min')
+    ax0.set_xlim(xmin=0)
+    ax1.set_ylabel('Depth (m)')
+    ax1.set_ylim(ymax=0)
+    ax0.xaxis.set_minor_locator(MultipleLocator(1))
+    interval_in_sec = 5
+    start_min = datetime.strptime(str(df["datetime"].iloc[0]), "%Y%m%d%H%M%S%f").minute % 10
+    if start_min == 0:
+        ii = 0
     else:
-        ST["avg_depth"] = pred.groupby('time (min)')[['depth']].mean()
-        ST = ST.reset_index()
-        gs = gridspec.GridSpec(2, 1, height_ratios=[2, 1])
-        ax0 = plt.subplot(gs[0])
-        #ax0.set_title("Station "+str(station))
-        ST.plot('time (min)', classes, kind='bar', stacked=True, color=cm, ax=ax0, fontsize=6)
-        ax1 = plt.subplot(gs[1], sharex=ax0)
-        ST.plot(kind='line', x="time (min)", y='avg_depth', color='gray', ax=ax1,alpha=0.3, fontsize=10)
-        for i in classes:
-            sct = scatter(ST["time (min)"], ST["avg_depth"], c=cm[i],
-                  s=ST[i], linewidths=2, edgecolor=cm[i], label=i)
-        sct.set_alpha(0.5)
+        if 1 <= start_min <= interval_in_sec:
+            ii = interval_in_sec - start_min
+        else:
+            ii = 10 - start_min
 
-        ax0.set_xlabel('Time elapsed (min)',fontsize=20)
-        ax0.set_ylabel('Fish count per min',fontsize=20)
-        ax0.set_xlim(xmin=0)
-        ax0.xaxis.set_major_locator(MultipleLocator(5))
-        # For the minor ticks, use no labels; default NullFormatter.
-        ax0.xaxis.set_minor_locator(MultipleLocator(1))
-        ax0.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+    x_ticks = ax0.get_xticks()
+    ax0.set_xticks(x_ticks[ii::interval_in_sec])
+    #  Display every nth x-tick label
+    ax0.set_xticklabels(df['time'][ii::interval_in_sec])
 
-        # ax0.yaxis.set_major_locator(MultipleLocator(100))
-        # ax0.yaxis.set_minor_locator(MultipleLocator(50))
-        # ax0.yaxis.set_major_formatter(FormatStrFormatter('%d'))
-
-        ax1.set_ylabel('Depth (m)')
-        # ax1.yaxis.set_major_locator(MultipleLocator(100))
-        # ax1.yaxis.set_major_formatter(FormatStrFormatter('%d'))
-
-        #plt.setp(ax0.get_xticklabels(), visible=False)
-        plt.subplots_adjust(hspace=.0)
+    plt.xticks(rotation=45, ha='right', fontsize=8)
+    plt.subplots_adjust(hspace=.0)
 
     if path_to_save_images is not None:
-       # plt.savefig(path_to_save_images + score_folder +
-       #          '/ST'+str(station) + '_histogram+bubbleplot_hq_transparent.svg',
-       #      dpi=300, bbox_inches='tight',transparent=True)
        plt.savefig(path_to_save_images + '_histogram+bubbleplot_hq_transparent.svg',
-            dpi=300, bbox_inches='tight',transparent=True)
+           transparent=True)
     else:
        plt.show()
+
+
