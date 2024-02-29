@@ -35,9 +35,8 @@ RUN cd deepvision-retinanet && pip3 install .
 
 RUN pip3 install --trusted-host pypi.python.org numpy scipy Pillow cython matplotlib scikit-image keras==2.4.0 opencv-python h5py imgaug IPython progressbar2 pandas sklearn lxml tqdm
 
-COPY /trained_model/resnet50_csv_inference.h5 /snapshots/resnet50_csv_inference.h5
-COPY /trained_model/detect_config.yaml /deepvision-retinanet/keras_retinanet/bin/detect_config.yaml
-
+COPY /redfish_model/resnet50_csv_inference_14.h5 /snapshots/resnet50_csv_inference.h5
+COPY /redfish_model/detect_config_redfish.yaml /deepvision-retinanet/keras_retinanet/bin/detect_config.yaml
 # Run when the container launches
 CMD ["/bin/bash", "-c", "cd /deepvision-retinanet && python3 keras_retinanet/bin/predict_DV.py"]
 
